@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الألغاز والذكاء</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e1e2f, #2a2a40);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background-color: #252538;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3b3b54;
+        }
+
+        .score-board {
+            font-size: 1.1rem;
+            background-color: #3b3b54;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: #00d26a;
+            font-weight: bold;
+        }
+
+        .riddle-box {
+            background-color: #1e1e2f;
+            padding: 25px;
+            border-radius: 12px;
+            font-size: 1.25rem;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #3b3b54;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 480px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn-option {
+            background-color: #3b3b54;
+            color: #fff;
+            border: 2px solid transparent;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-option:hover:not([disabled]) {
+            background-color: #4a4a68;
+            border-color: #6c5ce7;
+        }
+
+        .btn-option.correct {
+            background-color: #00b894 !important;
+            border-color: #00b894;
+            color: #fff;
+        }
+
+        .btn-option.wrong {
+            background-color: #d63031 !important;
+            border-color: #d63031;
+            color: #fff;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-next {
+            background-color: #6c5ce7;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: none;
+        }
+
+        .btn-next:hover {
+            background-color: #5b4bc4;
+        }
+
+        .result-screen {
+            display: none;
+        }
+
+        .result-screen h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #00d26a;
+        }
+
+        .result-screen p {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+        }
+
+        .btn-restart {
+            background-color: #6c5ce7;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- شاشة اللعب -->
+        <div id="quiz-screen">
+            <div class="header">
+                <span id="question-count">اللغز 1 من 5</span>
+                <div class="score-board">النقاط: <span id="score">0</span></div>
+            </div>
+
+            <div class="riddle-box" id="riddle-text">
+                جارٍ تحميل اللغز...
+            </div>
+
+            <div class="options-grid" id="options-container">
+                <!-- الأزرار تنشأ عبر السكريبت -->
+            </div>
+
+            <div class="controls">
+                <button class="btn-next" id="next-btn" onclick="nextQuestion()">اللغز التالي ←</button>
+            </div>
+        </div>
+
+        <!-- شاشة النهاية -->
+        <div id="result-screen" class="result-screen">
+            <h2>أحسنت! انتهت اللعبة 🎉</h2>
+            <p id="final-score-text">حصلت على 0 من 5 نقاط</p>
+            <button class="btn-restart" onclick="restartGame()">إعادة اللعب 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        // قائمة الألغاز والخيارات والإجابات الصحيحة
+        const riddles = [
+            {
+                question: "ما هو الشيء الذي يتكلم جميع اللغات ولكنه لا يملك لساناً؟",
+                options: ["الهاتف", "الصدى", "الراديو", "الكتاب"],
+                correct: 1
+            },
+            {
+                question: "شيء يمتلك أسناناً كثيرة ولكن لا يعض، فما هو؟",
+                options: ["المنشار", "الأسد", "المشط", "المفتاح"],
+                correct: 2
+            },
+            {
+                question: "كلما أخذت منه كِبَر، وكلما أضفت إليه صِغَر، فما هو؟",
+                options: ["الحفرة", "العمر", "البحر", "الظل"],
+                correct: 0
+            },
+            {
+                question: "ما هو الشيء الذي يمر عبر المدن والقبائل ولكنه لا يتحرك؟",
+                options: ["القطار", "السيارة", "الطريق", "الهواء"],
+                correct: 2
+            },
+            {
+                question: "ما هو الشيء الذي كلما زاد نقص؟",
+                options: ["المال", "العمر", "العلم", "الوزن"],
+                correct: 1
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        const riddleText = document.getElementById('riddle-text');
+        const optionsContainer = document.getElementById('options-container');
+        const questionCount = document.getElementById('question-count');
+        const scoreDisplay = document.getElementById('score');
+        const nextBtn = document.getElementById('next-btn');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const finalScoreText = document.getElementById('final-score-text');
+
+        function startGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            scoreDisplay.textContent = score;
+            quizScreen.style.display = 'block';
+            resultScreen.style.display = 'none';
+            showQuestion();
+        }
+
+        function showQuestion() {
+            resetState();
+            const currentRiddle = riddles[currentQuestionIndex];
+            
+            questionCount.textContent = `اللغز ${currentQuestionIndex + 1} من ${riddles.length}`;
+            riddleText.textContent = currentRiddle.question;
+
+            currentRiddle.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('btn-option');
+                button.onclick = () => selectOption(button, index, currentRiddle.correct);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function resetState() {
+            nextBtn.style.display = 'none';
+            optionsContainer.innerHTML = '';
+        }
+
+        function selectOption(selectedButton, selectedIndex, correctIndex) {
+            const allButtons = optionsContainer.children;
+            
+            // تعطيل كافة الأزرار بعد الاختيار
+            for (let btn of allButtons) {
+                btn.disabled = true;
+            }
+
+            if (selectedIndex === correctIndex) {
+                selectedButton.classList.add('correct');
+                score += 10;
+                scoreDisplay.textContent = score;
+            } else {
+                selectedButton.classList.add('wrong');
+                // إظهار الإجابة الصحيحة
+                allButtons[correctIndex].classList.add('correct');
+            }
+
+            nextBtn.style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < riddles.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            quizScreen.style.display = 'none';
+            resultScreen.style.display = 'block';
+            finalScoreText.textContent = `مجموع نقاطك: ${score} من ${riddles.length * 10} نقطة`;
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        // بدء اللعبة لأول مرة
+        startGame();
+    </script>
+</body>
+</html>
